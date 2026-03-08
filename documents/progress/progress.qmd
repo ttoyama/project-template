@@ -1,0 +1,35 @@
+---
+title: ""
+subtitle: ""
+date: last-modified
+date-format: "YYYY-MM-DD"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    lang: ja
+    self-contained: true
+    code-fold: true
+    grid:
+      body-width: 900px
+---
+
+## 概要
+
+（プロジェクトの概要を記載する）
+
+## 方針メモ
+
+（研究の方針・戦略についてのメモを記載する）
+
+## Next Action
+
+- [ ] （次にやるべきことを記載する）
+
+## 日誌
+
+| 日付 | 内容 |
+|:---|:---|
+| YYYY-MM-DD | プロジェクトを開始した |
