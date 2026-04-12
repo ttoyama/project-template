@@ -47,7 +47,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │       │       └── figures/
 │       ├── 10_submission/         # 投稿版
 │       ├── 20_first_revision/     # 第1回リビジョン
+│       │   ├── 20_R1_10_before_revision/    # 修正前の原稿一式
+│       │   ├── 20_R1_20_received_comments/  # 査読コメント受領
+│       │   └── 20_R1_30_preparing_revision/ # リビジョン作業
+│       │       └── YYYY-MM-DD/
+│       │           ├── response_letter/
+│       │           ├── manuscript/
+│       │           └── figures/
 │       └── 30_second_revision/    # 第2回リビジョン以降
+│           ├── 30_R2_10_before_revision/
+│           ├── 30_R2_20_received_comments/
+│           └── 30_R2_30_preparing_revision/
+│               └── YYYY-MM-DD/
+│                   ├── response_letter/
+│                   ├── manuscript/
+│                   └── figures/
 ├── output/                        # 統計解析結果
 │   ├── data/                      # 解析で生成されたデータ
 │   ├── figures/                   # 図
@@ -70,6 +84,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `JOURNALNAME_XYZ/10_submission/`: 投稿版
 - `JOURNALNAME_XYZ/20_first_revision/`: 第1回リビジョン
 - `JOURNALNAME_XYZ/30_second_revision/`: 第2回リビジョン以降
+
+リビジョンフォルダ内のサブフォルダ構成（20_first_revision の例）:
+- `20_R1_10_before_revision/`: 修正前の原稿一式を保管する
+- `20_R1_20_received_comments/`: 査読コメントを保管する
+- `20_R1_30_preparing_revision/YYYY-MM-DD/`: 日付ごとの作業フォルダ。response_letter/, manuscript/, figures/ を含む
+- 共著者からのフィードバックは `20_R1_30_preparing_revision/` 直下に `YYYY-MM-DD_共著者名/` のように都度作成する
 
 ### output/
 
