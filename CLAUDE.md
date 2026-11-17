@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 （プロジェクトごとに記入する）
 
+## 禁止事項
+
+- 患者個人識別情報（氏名・生年月日・ID・住所等）を log・report・output に出力しない
+- `data/` の生データファイルは Claude が直接読まない。データ構造は R や Stata のスクリプト経由で確認し、解析もスクリプト側で完結させる（`.claudeignore` で除外済み）
+- `data/` の生データを chat・commit message・issue本文・PR本文に貼り付けない
+- 認証情報（APIキー・password）はコードにハードコードしない。環境変数または keychain (`security find-generic-password`) 経由で取得する
+- `data/` 配下のファイルは delete・上書きしない。row も削除せず flag で管理する（解析時の dedup は `if baseline_row == 1` 等で行う）
+- 解析結果（個票・集計値）を外部の生成AI API（ChatGPT 等）に送信しない
+
 ## ディレクトリ構造
 
 ```
@@ -29,6 +38,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │   │   │   └── YYYY-MM-DD/
 │   │   └── SAP/                   #   統計解析計画書
 │   │       └── YYYY-MM-DD/
+│   │           └── mock/          #     mock table / mock figure
 │   ├── DMP/                       # データ管理計画
 │   ├── CSR/                       # 臨床試験報告書
 │   │   ├── fixed/
@@ -40,28 +50,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │   └── progress/                  # 進捗記録
 │       └── progress.qmd           # 進捗レポート
 ├── manuscript/                    # 論文原稿
-│   └── JOURNALNAME_XYZ/
-│       ├── 00_preparation/        # 論文下書き
-│       │   ├── instructions_for_authors/
-│       │   └── YYYY-MM-DD/
-│       │       └── figures/
-│       ├── 10_submission/         # 投稿版
-│       ├── 20_first_revision/     # 第1回リビジョン
-│       │   ├── 20_R1_10_before_revision/    # 修正前の原稿一式
-│       │   ├── 20_R1_20_received_comments/  # 査読コメント受領
-│       │   └── 20_R1_30_preparing_revision/ # リビジョン作業
-│       │       └── YYYY-MM-DD/
+│   └── JOURNALNAME_XYZ/           # 投稿する雑誌ごとに1つ
+│       ├── instructions_for_authors/  # 投稿規程
+│       ├── 00_initial_submission/     # 初回投稿
+│       │   └── YYYY-MM-DD/            # 更新ごとの版。最後の日付が投稿した最終原稿
+│       │       ├── main_text/
+│       │       ├── figures/
+│       │       └── cover_letter/
+│       ├── 10_first_revision/         # R1
+│       │   ├── 10_R1_10_before_revision/    # 修正前の原稿一式（投稿版を写す）
+│       │   ├── 10_R1_20_received_comments/  # 査読コメント・決定通知
+│       │   └── 10_R1_30_preparing_revision/ # 修正の作業場
+│       │       └── YYYY-MM-DD/              # 更新ごとの版。最後の日付が R1 の提出版
+│       │           ├── main_text/
+│       │           ├── figures/
 │       │           ├── response_letter/
-│       │           ├── manuscript/
-│       │           └── figures/
-│       └── 30_second_revision/    # 第2回リビジョン以降
-│           ├── 30_R2_10_before_revision/
-│           ├── 30_R2_20_received_comments/
-│           └── 30_R2_30_preparing_revision/
-│               └── YYYY-MM-DD/
-│                   ├── response_letter/
-│                   ├── manuscript/
-│                   └── figures/
+│       │           └── cover_letter/
+│       ├── 20_second_revision/        # R2（R1 と同じ形）
+│       │   ├── 20_R2_10_before_revision/
+│       │   ├── 20_R2_20_received_comments/
+│       │   └── 20_R2_30_preparing_revision/
+│       │       └── YYYY-MM-DD/
+│       └── 90_post_acceptance/        # 受理後
+│           ├── oa_fee/
+│           └── outreach/
 ├── output/                        # 統計解析結果
 │   ├── data/                      # 解析で生成されたデータ
 │   ├── figures/                   # 図
@@ -79,17 +91,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### manuscript/
 
-論文原稿の管理。ジャーナル別にサブディレクトリを作成する:
-- `JOURNALNAME_XYZ/00_preparation/YYYY-MM-DD/`: 論文の下書きを日付ディレクトリに作成する
-- `JOURNALNAME_XYZ/10_submission/`: 投稿版
-- `JOURNALNAME_XYZ/20_first_revision/`: 第1回リビジョン
-- `JOURNALNAME_XYZ/30_second_revision/`: 第2回リビジョン以降
+論文原稿の管理。投稿する雑誌ごとに `JOURNALNAME_XYZ/` を作る。リジェクトされて別の雑誌に出し直すときは、新しい雑誌名のフォルダを作って 00 から始め、前の雑誌のフォルダは残す。
 
-リビジョンフォルダ内のサブフォルダ構成（20_first_revision の例）:
-- `20_R1_10_before_revision/`: 修正前の原稿一式を保管する
-- `20_R1_20_received_comments/`: 査読コメントを保管する
-- `20_R1_30_preparing_revision/YYYY-MM-DD/`: 日付ごとの作業フォルダ。response_letter/, manuscript/, figures/ を含む
-- 共著者からのフィードバックは `20_R1_30_preparing_revision/` 直下に `YYYY-MM-DD_共著者名/` のように都度作成する
+- `00_initial_submission/YYYY-MM-DD/`: 初回投稿までの原稿。直すたびに新しい日付フォルダを作り（前の版を写してから直す）、古い日付のフォルダは上書きしない。日付フォルダが版の数だけ並び、**最後の日付のものが初回投稿の最終原稿**になる。日付は投稿日ではなく、その版を作った日である
+- `10_first_revision/`: R1
+  - `10_R1_10_before_revision/`: 修正前の原稿一式。R1 に入ったら最初に投稿版を写し、以後は触らない
+  - `10_R1_20_received_comments/`: 査読コメント・決定通知
+  - `10_R1_30_preparing_revision/YYYY-MM-DD/`: 修正の作業場。00 と同じく更新ごとに日付フォルダを作り、最後の日付のものが R1 の提出版になる。main_text/, figures/, response_letter/, cover_letter/ を含む
+  - 共著者からのフィードバックは `10_R1_30_preparing_revision/` 直下に `YYYY-MM-DD_共著者名/` のように都度作成する
+- `20_second_revision/`: R2。中身は R1 と同じ形（`20_R2_10_…` `20_R2_20_…` `20_R2_30_…`）。R3 以降は `30_third_revision/` を足す
+- `90_post_acceptance/`: 受理後。`oa_fee/`（掲載料・OA の手続き）、`outreach/`（広報）
+- `instructions_for_authors/`: 投稿規程の PDF・チェックリスト
 
 ### output/
 
@@ -105,6 +117,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 研究関連文書:
 - `protocol/`: 研究プロトコル本体
 - `IRB/`: 倫理委員会提出用一式（PRT: 倫理委提出版プロトコル、ICF: 同意説明文書、SAP: 統計解析計画書）
+  - `SAP/YYYY-MM-DD/mock/`: SAP に付随する mock table / mock figure（数値が入っていない表・図の雛形）を置く。SAP 本体と同じ日付フォルダに入れ、版を一対一で対応させる
+  - mock は SAP の付属物なので `documents/` 直下には置かない。実データを入れた成果物は `output/tables/` `output/figures/` 側で管理し、mock とは分ける
 - `DMP/`: データ管理計画（Data Management Plan）
 - `CSR/`: 臨床試験報告書
 - `grants/`: 予算申請・助成金申請
@@ -148,15 +162,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### ワークフロー
 1. `output/` にある統計解析結果を確認する
-2. `manuscript/JOURNALNAME_XYZ/00_preparation/` に今日の日付でディレクトリを作成する
+2. `manuscript/JOURNALNAME_XYZ/00_initial_submission/` に今日の日付でディレクトリを作成する
 3. その中で論文の下書きを作成する（LaTeX、英語）
-4. 完成したら次の段階（10_submission等）に移動する
+4. 直すたびに日付フォルダを足し、最後の日付の版で投稿する。投稿版を別のフォルダへ移さない
+5. 査読が返ってきたら `10_first_revision/10_R1_10_before_revision/` に投稿版を写してから R1 の作業に入る
 
 ### 日付をまたいで作業を継続する場合
 - 作業開始時に日付が変わっていたら、最新の日付フォルダを今日の日付でコピーしてから作業を続ける
 - 例: `2025-11-25/` が最新で今日が `2025-11-26` の場合
   ```bash
-  cp -r 00_preparation/2025-11-25 00_preparation/2025-11-26
+  cp -r 00_initial_submission/2025-11-25 00_initial_submission/2025-11-26
   ```
 - コピー後、新しいフォルダ内で作業を継続する
 
